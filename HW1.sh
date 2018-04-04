@@ -1,0 +1,1 @@
+/home/ammar/Documents/Software/OpenSfM/bin/opensfm_run_all /home/ammar/Documents/Software/OpenSfM/data/SeperatedImages
