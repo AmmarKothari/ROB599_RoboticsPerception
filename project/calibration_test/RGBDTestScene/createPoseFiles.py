@@ -32,6 +32,6 @@ class makeFakePoses():
 
 if __name__ == '__main__':
 	m = makeFakePoses()
-	dfns = m.getDepthFiles('WithObject')
+	dfns = m.getDepthFiles('WithoutObject')
 	poseFns = m.generatePoseFileNames(dfns)
 	m.createPoses(fakePose, poseFns)
