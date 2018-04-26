@@ -16,18 +16,18 @@ class TSDF():
 		self.cam_int_fn = camera_intrinsics_fn
 
 	def initializeConstants(self):
-		# self.voxel_grid_origin_x = -1.5 #Location of voxel grid origin in base frame camera coordinates
-		# self.voxel_grid_origin_y = -1.5
-		# self.voxel_grid_origin_z = 0.5
-		self.voxel_grid_origin_x = 0 #Location of voxel grid origin in base frame camera coordinates
-		self.voxel_grid_origin_y = 0
+		self.voxel_grid_origin_x = -1.5 #Location of voxel grid origin in base frame camera coordinates
+		self.voxel_grid_origin_y = -1.5
 		self.voxel_grid_origin_z = 0.5
+		# self.voxel_grid_origin_x = 0 #Location of voxel grid origin in base frame camera coordinates
+		# self.voxel_grid_origin_y = 0
+		# self.voxel_grid_origin_z = 0.5
 		self.voxel_size = 0.006
-		self.trunc_margin = self.voxel_size * 50
 		self.voxel_grid_dim_x = 500
 		self.voxel_grid_dim_y = 500
 		self.voxel_grid_dim_z = 500
 		self.trunc_margin = self.voxel_size * 5
+		# self.trunc_margin = self.voxel_size * 5
 
 
 
@@ -120,21 +120,21 @@ class TSDF():
 					
 					volume_idx = (pt_grid_x, pt_grid_y, pt_grid_z);
 					dist = min(1.0, diff / self.trunc_margin) # what is this?
-					dist = diff / self.trunc_margin
+					# dist = diff / self.trunc_margin
 					print("X pixel: {}, Y Pixel: {}, Depth: {}, Truncation: {}".format(pt_pix_x, pt_pix_y, depth_val, dist))
 					weight_old = self.voxel_grid_weight[volume_idx]
 					weight_new = weight_old + 1.0
 					self.voxel_grid_weight[volume_idx] = weight_new;
 					self.voxel_grid_TSDF[volume_idx] = (self.voxel_grid_TSDF[volume_idx] * weight_old + dist) / weight_new;
 		# pdb.set_trace()
-		self.SDFtoPLY('test.ply', self.voxel_grid_TSDF, self.voxel_grid_TSDF)
+		# self.SDFtoPLY('test.ply', self.voxel_grid_TSDF, self.voxel_grid_TSDF)
 
 	def SDFtoPLY(self, fn, SDF, SDF_weights):
 		# convert from SDF to a point cloud
 		num_pts = 0
 
 		points_string = ''
-		tsdf_thresh = 1e3 # from the example
+		tsdf_thresh = 0.2 # from the example
 		weight_thresh = 0.0
 		SDF_dims = SDF.shape
 		for i_x in range(SDF_dims[0]):
