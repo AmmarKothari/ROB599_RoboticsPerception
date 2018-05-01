@@ -94,8 +94,11 @@ class calibrateCameraCustom(object):
 	def getCameraParams(self):
 		return [self.ret, self.mtx, self.dist, self.rvecs, self.tvecs, self.newcameramtx, self.roi]
 
-	def saveCameraParams(self, folder):
-		fn = os.path.join(folder,'CameraCal')
+	def saveCameraParams(self, folder, fn=None):
+		if fn is None:
+			fn = 'CameraCal'
+		fn = os.path.join(folder, fn)
+
 		np.savez(fn, ret=self.ret, mtx=self.mtx, dist=self.dist, rvecs=self.rvecs, tvecs=self.tvecs, newcameramtx=self.newcameramtx, roi=self.roi)
 
 	def loadCameraParams(self, fn):
@@ -119,7 +122,7 @@ class calibrateCameraCustom(object):
 			imgpoints2, _ = cv2.projectPoints(self.objpoints[i], self.rvecs[i], self.tvecs[i], self.mtx, self.dist)
 			error = cv2.norm(self.imgpoints[i],imgpoints2, cv2.NORM_L2)/len(imgpoints2)
 			tot_error += error
-		print "total error: ", mean_error/len(self.objpoints)
+		print "total error: ", tot_error/len(self.objpoints)
 	
 class undistortImage(object):
 	def __init__(self, ret, mtx, dist, rvecs, tvecs, newcameramtx, roi):

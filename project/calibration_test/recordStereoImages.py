@@ -102,7 +102,7 @@ class extractImagesFromBag():
 
 
 if __name__ == '__main__':
-	r = recordStereoImages('stereo_smallcheckerboard_object.bag')
+	r = recordStereoImages('stereo_smallcheckerboard.bag')
 	r.startNode()
 	r.launchStereoNode()
 	rate = rospy.Rate(10)
