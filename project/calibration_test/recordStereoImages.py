@@ -21,7 +21,7 @@ class recordStereoImages():
 		rospy.init_node('StereoRecorder', anonymous=True)
 
 		# i didn't test these
-	def launchStereoNode():
+	def launchStereoNode(self):
 		# turns off autofocus -- make sure these are the right cameras
 		subprocess.Popen(['v4l2-ctl', '-c', 'focus_auto=0', '-d', '/dev/video0'])
 		subprocess.Popen(['v4l2-ctl', '-c', 'focus_auto=0', '-d', '/dev/video1'])
@@ -30,7 +30,7 @@ class recordStereoImages():
 		self.node = roslaunch.core.Node(package, executable)
 		self.launch = roslaunch.scriptapi.ROSLaunch()
 		self.launch.start()
-		self.process = launch.launch(node)
+		self.process = self.launch.launch(self.node)
 
 	def closeStereoNode():
 		self.process.stop()
@@ -102,8 +102,9 @@ class extractImagesFromBag():
 
 
 if __name__ == '__main__':
-	r = recordStereoImages('stereo_notallcheckerboard_object.bag')
+	r = recordStereoImages('stereo_smallcheckerboard_object.bag')
 	r.startNode()
+	r.launchStereoNode()
 	rate = rospy.Rate(10)
 
 
@@ -116,4 +117,3 @@ if __name__ == '__main__':
 	rospy.on_shutdown(r.shutdown)
 
 	print('Shutting Down!')
-	pdb.set_trace()

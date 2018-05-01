@@ -29,10 +29,6 @@ class TSDF():
 		self.trunc_margin = self.voxel_size * 5
 		# self.trunc_margin = self.voxel_size * 5
 
-
-
-
-
 	def printFN(self, fn):
 		print("File: {}".format(fn))
 
