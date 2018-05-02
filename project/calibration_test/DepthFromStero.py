@@ -7,8 +7,8 @@ outputs a disparity map
 import cv2
 import numpy as np
 import pdb
-from cal_test import calibrateCameraCustom
-import glob, os
+from cal_test import calibrateCameraCustom, horizConcat
+import glob, os, time
 
 class phonyStereoCamera(object):
 	# creates an interface for a fake camera sort of like a real camera
@@ -58,13 +58,58 @@ class phonyStereoCamera(object):
 		img = cv2.imread(fname)
 		return img
 
+class stereoCamera(object):
+	def __init__(self):
+		self.camL = cv2.VideoCapture()
+		self.camR = cv2.VideoCapture()
+		available_cams = self.getCameraIndexes()
+		if len(available_cams) >= 2:
+			retL, retR = self.openCameras(available_cams)
+		else:
+			print("Could not open Cameras")
+			raise ValueError('Could not open Cameras')
 
+		if not retL or not retR:
+			print("Could not open Cameras")
+			raise ValueError('Could not open Cameras')
+
+	def openCameras(self, cams_idxs):
+		retL = self.camL.open(cams_idxs[0])
+		retR = self.camR.open(cams_idxs[1])
+		return retL, retR
+
+	def getCameraIndexes(self):
+		cam = cv2.VideoCapture()
+		available_cameras = []
+		for i in range(10):
+			if cam.open(i):
+				available_cameras.append(i)
+		print(available_cameras)
+		return available_cameras
+
+	def getStereoPair(self):
+		# returns a stereo pair and a flag saying if images remaining
+		left_img, right_img, flag = self._getCurrentStereoPair()
+		return left_img, right_img, flag
+
+	def _getCurrentStereoPair(self):
+		self.camL.grab()
+		time.sleep(0.1)
+		self.camR.grab()
+		left_img, retL = self.camL.retrieve();
+		right_img, retR = self.camR.retrieve();
+		ret = retL and retR
+		return left_img, right_img, ret
+
+# class rosStereoCamera(object):
+	# camera object that relies on ROS interface
+	# kept running into no space left on device issue
 
 windowNameL = "LEFT Camera Input"; # window name
 windowNameR = "RIGHT Camera Input"; # window name
 WIDTH_SQUARE = 4
 HEIGHT_SQUARES = 3
-SQUARE_SIZE_MM = 40
+SQUARE_SIZE_MM = 51.5
 
 class calibrateStereoCameras(calibrateCameraCustom):
 	def __init__(self):
@@ -165,7 +210,9 @@ class calibrateStereoCameras(calibrateCameraCustom):
 		self.imgpoints = imgpoints
 		super(calibrateStereoCameras, self).reProjectionError()
 
-	def calibrateStereoCameras(self, img_gray):
+	def calibrateStereoCameras(self, img_gray): #intrinsic calibration
+		# can this be done with sets of images?
+		# average over the set of images
 		# Left Camera
 		self.getCameraCalibrationParameters(img_gray, self.objpoints, self.imgpointsL)
 		self.optimalNewCameraMatrix(img_gray)
@@ -180,10 +227,63 @@ class calibrateStereoCameras(calibrateCameraCustom):
 		self.reProjectionError(self.imgpointsR)
 		self.saveCameraParams('.', 'CameraCalRight')
 
-	def loadCameraParameters(self, fn_left, fn_right): #### start here!!!!
+	def loadCameraParameters(self, fn_left, fn_right):
 		# load camera parameters
 		self.loadCameraParams(fn_left)
-		self.mtxL, self.distL, self.rvecsL, self.tvecsL, self.newcameramtxL, self.roiL = self.getCameraParams()
+		self.retL, self.mtxL, self.distL, self.rvecsL, self.tvecsL, self.newcameramtxL, self.roiL = self.getCameraParams()
+		self.loadCameraParams(fn_right)
+		self.retR, self.mtxR, self.distR, self.rvecsR, self.tvecsR, self.newcameramtxR, self.roiR = self.getCameraParams()
+
+	def extrinsicCalibrateStereoCameras(self, img_gray):
+		# recover the relative camera pose
+		termination_criteria_extrinsics = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 100, 0.001)
+		(rms_stereo, self.camera_matrix_l, self.dist_coeffs_l, self.camera_matrix_r, self.dist_coeffs_r, self.R, self.T, E, F) = \
+			cv2.stereoCalibrate(self.objpoints, self.imgpointsL, self.imgpointsR, self.mtxL, self.distL, self.mtxR, self.distR,  img_gray.shape[::-1], criteria=termination_criteria_extrinsics, flags=0);
+		print("STEREO: RMS left to  right re-projection error: ", rms_stereo)
+		print("Good results are between 0.1 and 1.0, but no real guidelines.")
+		self.saveExtrinsicParameters('StereoCal')
+
+	def saveExtrinsicParameters(self, fn):
+		np.savez(fn, camera_matrix_l=self.camera_matrix_l, dist_coeffs_l=self.dist_coeffs_l, camera_matrix_r=self.camera_matrix_r, dist_coeffs_r=self.dist_coeffs_r, R=self.R, T=self.T)
+
+	def loadExtrinsicParameters(self, fn):
+		npzfile = np.load(fn)
+		self.camera_matrix_l = npzfile['camera_matrix_l']
+		self.dist_coeffs_l = npzfile['dist_coeffs_l']
+		self.camera_matrix_r = npzfile['camera_matrix_r']
+		self.dist_coeffs_r = npzfile['dist_coeffs_r']
+		self.R = npzfile['R']
+		self.T = npzfile['T']
+
+	def rectifyCalibrate(self, img_gray):
+		# align left and right images
+		self.RL, self.RR, self.PL, self.PR, _, _, _ = cv2.stereoRectify(self.camera_matrix_l, self.dist_coeffs_l, self.camera_matrix_r, self.dist_coeffs_r,  img_gray.shape[::-1], self.R, self.T, alpha=-1)
+		self.mapL1, self.mapL2 = cv2.initUndistortRectifyMap(self.camera_matrix_l, self.dist_coeffs_l, self.RL, self.PL, img_gray.shape[::-1], cv2.CV_32FC1)
+		self.mapR1, self.mapR2 = cv2.initUndistortRectifyMap(self.camera_matrix_r, self.dist_coeffs_r, self.RR, self.PR, img_gray.shape[::-1], cv2.CV_32FC1)
+		self.saveRectifyParams('RectifyCal')
+
+	def saveRectifyParams(self, fn):
+		np.savez(fn, RL=self.RL, RR=self.RR, PL=self.PL, PR=self.PR, mapL1=self.mapL1, mapL2=self.mapL2, mapR1=self.mapR1, mapR2=self.mapR2)
+
+	def loadRectifyParams(self, fn):
+		npzfile = np.load(fn)
+		self.RL = npzfile['RL']
+		self.RR = npzfile['RR']
+		self.PL = npzfile['PL']
+		self.PR = npzfile['PR']
+		self.mapL1 = npzfile['mapL1']
+		self.mapL2 = npzfile['mapL2']
+		self.mapR1 = npzfile['mapR1']
+		self.mapR2 = npzfile['mapR2']
+
+	def rectifyImages(self, left_img, right_img):
+		undistorted_rectifiedL = cv2.remap(left_img, self.mapL1, self.mapL2, cv2.INTER_LINEAR)
+		undistorted_rectifiedR = cv2.remap(right_img, self.mapR1, self.mapR2, cv2.INTER_LINEAR)
+		return undistorted_rectifiedL, undistorted_rectifiedR
+
+	# def 
+
+
 
 
 

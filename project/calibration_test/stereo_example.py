@@ -34,12 +34,15 @@
 import cv2
 import sys
 import numpy as np
+import pdb
 
 #####################################################################
 
 keep_processing = True;
 # camera_to_use = 0; # 0 if you have no built in webcam, 1 otherwise
-camera_to_use = cv2.CAP_XIAPI; # for the Xiema cameras (opencv built with driver)
+# camera_to_use = cv2.CAP_XIAPI; # for the Xiema cameras (opencv built with driver)
+camera_to_use = 2; # trial and error made this work
+
 
 #####################################################################
 
@@ -57,7 +60,6 @@ windowNameR = "RIGHT Camera Input"; # window name
 
 print("s : swap cameras left and right")
 print("c : continue to next stage")
-
 if ((camL.open(camera_to_use)) and (camR.open(camera_to_use + 1))):
 
     while (keep_processing):
