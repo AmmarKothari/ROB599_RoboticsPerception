@@ -10,37 +10,64 @@ from DepthFromStero import DepthFromStereo, phonyStereoCamera, calibrateStereoCa
 import glob
 import os
 import cv2
+import pdb
 
-folder = "/home/ammar/Documents/Projects/ROB599_RoboticsPerception/project/calibration_test/StereoImages/WithoutObject/Pairs"
+# folder = "/home/ammar/Documents/Projects/ROB599_RoboticsPerception/project/calibration_test/StereoImages/WithoutObject/Pairs"
+folder = "/home/ammar/Documents/Projects/ROB599_RoboticsPerception/project/calibration_test/StereoImages/Calibration"
 
-SC = phonyStereoCamera(folder, folder)
-SC = stereoCamera()
-
+SC = phonyStereoCamera(os.path.join(folder, 'RGBPairs'), os.path.join(folder, 'RGBPairs'))
+# SC = stereoCamera()
+SC.crop_flag = False
 cal = calibrateStereoCameras()
 if not os.path.isfile('checkerboardFeatures.npz'):
 	cal.extractCheckerboardFeatures(SC)
 
+SC.crop_flag = True
 cal.loadCheckerboardFeatures('checkerboardFeatures.npz')
-left, right = SC._getCurrentStereoPair()
+
+left, right, loop_flag = SC._getCurrentStereoPair()
 if not os.path.isfile('CameraCalRight.npz') and not os.path.isfile('CameraCalLeft.npz'):
-	cal.calibrateStereoCameras(cal.grayscaleImage(left))
+	cal.calibrateStereoCameras(cal.grayscaleImage(left))	
 
 cal.loadCameraParameters('CameraCalLeft.npz', 'CameraCalRight.npz')
 if not os.path.isfile('StereoCal.npz'):
 	cal.extrinsicCalibrateStereoCameras(cal.grayscaleImage(left))
 cal.loadExtrinsicParameters('StereoCal.npz')
-if not os.path.isfile('RectifyCal.npz'):
+
+# if not os.path.isfile('RectifyCal.npz'):
+if True:
 	cal.rectifyCalibrate(cal.grayscaleImage(left))
+	i = 0
+	while loop_flag:
+		left, right, loop_flag = SC.getStereoPair()
+		rectL, rectR = cal.rectifyImages(left, right)
+		cv2.imwrite(os.path.join(folder, 'Rectified', '%04d_left.png' %i), rectL)
+		cv2.imwrite(os.path.join(folder, 'Rectified', '%04d_right.png' %i), rectR)
+
+		i += 1
+
+
 cal.loadRectifyParams('RectifyCal.npz')
 loop_flag = True
 
+# while loop_flag:
+# 	left, right, loop_flag = SC.getStereoPair()
+# 	left_rect, right_rect = cal.rectifyImages(left, right)
+# 	cv2.imshow('test', horizConcat(left_rect, right_rect))
+# 	cv2.waitKey(40)
+# cv2.imwrite('Rectified.png', horizConcat(left_rect, right_rect))
+# cv2.destroyAllWindows()
+i = 0
 while loop_flag:
 	left, right, loop_flag = SC.getStereoPair()
-	left_rect, right_rect = cal.rectifyImages(left, right)
-	cv2.imshow('test', horizConcat(left_rect, right_rect))
+	disp = cal.disparityImage(left, right)
+	# pdb.set_trace()
+	cv2.imshow('test', horizConcat(disp, horizConcat(left, right)))
+	cv2.imwrite(os.path.join(folder, 'Disparity', '%04d.png' %i), disp)
 	cv2.waitKey(40)
+	i +=1
+cv2.imwrite('Disparity.png', horizConcat(disp, horizConcat(left, right)))
 cv2.destroyAllWindows()
-
 
 
 # left_fns = glob.glob(os.path.join(folder, '*.left.png'))

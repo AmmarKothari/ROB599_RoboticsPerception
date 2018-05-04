@@ -35,13 +35,13 @@ import cv2
 import sys
 import numpy as np
 import pdb
-
+import glob, os
 #####################################################################
 
 keep_processing = True;
-# camera_to_use = 0; # 0 if you have no built in webcam, 1 otherwise
+camera_to_use = 4; # 0 if you have no built in webcam, 1 otherwise
 # camera_to_use = cv2.CAP_XIAPI; # for the Xiema cameras (opencv built with driver)
-camera_to_use = 2; # trial and error made this work
+# camera_to_use = 2; # trial and error made this work
 
 
 #####################################################################
@@ -62,6 +62,12 @@ print("s : swap cameras left and right")
 print("c : continue to next stage")
 if ((camL.open(camera_to_use)) and (camR.open(camera_to_use + 1))):
 
+# path = '/home/ammar/Documents/Projects/ROB599_RoboticsPerception/project/calibration_test/StereoImages/WithoutObject/Pairs'
+# left_imgs = os.path.join(path, 'frame-%4d.left.png')
+# right_imgs = os.path.join(path, 'frame-%4d.right.png')
+# pdb.set_trace()
+# if ((camL.open(left_imgs)) and (camR.open(right_imgs))):
+
     while (keep_processing):
 
         # grab frames from camera (to ensure best time sync.)
@@ -77,8 +83,8 @@ if ((camL.open(camera_to_use)) and (camR.open(camera_to_use + 1))):
 
         # display image
 
-        cv2.imshow(windowNameL,frameL);
-        cv2.imshow(windowNameR,frameR);
+        cv2.imshow(windowNameL,cv2.addWeighted(frameL, 0.5, frameR, 0.5, 0.0));
+        cv2.imshow(windowNameR,frameR)
 
         # start the event loop - essential
 
@@ -115,6 +121,8 @@ termination_criteria_subpix = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITE
 # set up a set of real-world "object points" for the chessboard pattern
 
 patternX = 6;
+patternY = 9;
+patternX = 7;
 patternY = 9;
 square_size_in_mm = 40;
 
@@ -160,7 +168,6 @@ while (not(do_calibration)):
         retL, cornersR = cv2.findChessboardCorners(grayR, (patternX,patternY),None, cv2.CALIB_CB_ADAPTIVE_THRESH | cv2.CALIB_CB_FAST_CHECK | cv2.CALIB_CB_NORMALIZE_IMAGE);
 
         # If found, add object points, image points (after refining them)
-
         if ((retR == True) and (retL == True)):
 
             chessboard_pattern_detections += 1;
@@ -189,7 +196,6 @@ while (not(do_calibration)):
         else:
             text = 'detected: ' + str(chessboard_pattern_detections);
             cv2.putText(frameL, text, (10,25), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255,0), 2, 8);
-
             cv2.imshow(windowNameL,frameL);
             cv2.imshow(windowNameR,frameR);
 
