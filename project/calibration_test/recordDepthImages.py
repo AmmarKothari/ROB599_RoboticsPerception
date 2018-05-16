@@ -180,6 +180,6 @@ if __name__ == '__main__':
 	i = 0
 	while True:
 		r.getImages()
-		folder =  'RGBDTestScene/Attempt2'
+		folder =  '../Data/RGBDTestScene/Attempt3'
 		r.recordImages(os.path.join(folder, '%4d_depth.png' %i), os.path.join(folder, '%4d_color_depth.png' %i), os.path.join(folder, '%4d_rgb.png' %i))
 		i = i+1
