@@ -118,7 +118,8 @@ class recordDepthRealsense(object):
 	def recordDepth(self, fn, fn2):
 		d = self.dev.depth
 		d_color = self.convert_z16_to_bgr(d)
-		cv2.imwrite(fn, d)
+		np.save(fn, d)
+		# cv2.imwrite(fn, d)
 		# fn2 = fn.split('.')
 		# fn2.insert(-1,'_color')
 		# fn2 = '.'.join(fn2)
@@ -181,5 +182,5 @@ if __name__ == '__main__':
 	while True:
 		r.getImages()
 		folder =  '../Data/RGBDTestScene/Attempt3'
-		r.recordImages(os.path.join(folder, '%4d_depth.png' %i), os.path.join(folder, '%4d_color_depth.png' %i), os.path.join(folder, '%4d_rgb.png' %i))
+		r.recordImages(os.path.join(folder, '%4d_depth.npy' %i), os.path.join(folder, '%4d_color_depth.png' %i), os.path.join(folder, '%4d_rgb.png' %i))
 		i = i+1
