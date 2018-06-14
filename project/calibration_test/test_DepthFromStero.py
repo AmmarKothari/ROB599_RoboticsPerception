@@ -13,12 +13,17 @@ import cv2
 import pdb
 
 # folder = "/home/ammar/Documents/Projects/ROB599_RoboticsPerception/project/calibration_test/StereoImages/WithoutObject/Pairs"
-folder = "/home/ammar/Documents/Projects/ROB599_RoboticsPerception/project/calibration_test/StereoImages/Calibration"
+# folder = "/home/ammar/Documents/Projects/ROB599_RoboticsPerception/project/calibration_test/StereoImages/Calibration"
+folder = "/home/ammar/Documents/Projects/ROB599_RoboticsPerception/project/Data/StereoImages/Calibration2"
 
 SC = phonyStereoCamera(os.path.join(folder, 'RGBPairs'), os.path.join(folder, 'RGBPairs'))
 # SC = stereoCamera()
 SC.crop_flag = False
 cal = calibrateStereoCameras()
+cal.w = SC.w
+cal.h = SC.h
+cal.img_w = cal.w
+cal.img_h = cal.h
 if not os.path.isfile('checkerboardFeatures.npz'):
 	cal.extractCheckerboardFeatures(SC)
 
@@ -62,11 +67,11 @@ while loop_flag:
 	left, right, loop_flag = SC.getStereoPair()
 	disp = cal.disparityImage(left, right)
 	# pdb.set_trace()
-	cv2.imshow('test', horizConcat(disp, horizConcat(left, right)))
+	cv2.imshow('test', horizConcat((disp, left, right)))
 	cv2.imwrite(os.path.join(folder, 'Disparity', '%04d.png' %i), disp)
 	cv2.waitKey(40)
 	i +=1
-cv2.imwrite('Disparity.png', horizConcat(disp, horizConcat(left, right)))
+cv2.imwrite('Disparity.png', horizConcat((disp, left, right)))
 cv2.destroyAllWindows()
 
 

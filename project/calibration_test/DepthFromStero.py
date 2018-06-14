@@ -7,10 +7,13 @@ outputs a disparity map
 import cv2
 import numpy as np
 import pdb
-from cal_test import calibrateCameraCustom, horizConcat
-import glob, os, time, subprocess
+
+import glob, os, time, subprocess, sys
+sys.path.insert(0, '../scripts')
+from cameraCal import calibrateCameraCustom
+from utils import horizConcat
 import roslaunch
-import cv_bridge
+# import cv_bridge
 import rospy
 import sensor_msgs.msg
 import copy
@@ -19,9 +22,13 @@ class phonyStereoCamera(object):
 	# creates an interface for a fake camera sort of like a real camera
 	def __init__(self, left_folder, right_folder):
 		self.left_folder, self.right_folder = left_folder, right_folder
-		self.left_fns, self.right_fns = self.getImagePathsFromFolder(left_folder, 'left'), self.getImagePathsFromFolder(right_folder, 'right')
+		# self.left_fns, self.right_fns = self.getImagePathsFromFolder(left_folder, 'left'), self.getImagePathsFromFolder(right_folder, 'right')
+		self.left_fns, self.right_fns = self.getImagePathsFromFolder(left_folder, 'L'), self.getImagePathsFromFolder(right_folder, 'R') # for the data Yi collected
 		self.i = 0
 		self.total_frames = len(self.left_fns)
+		l, r, _ = self._getCurrentStereoPair(0)
+		self.w = l.shape[1]
+		self.h = l.shape[0]
 
 
 	def getImagePathsFromFolder(self, folder, side):
@@ -97,8 +104,8 @@ class stereoCamera(object):
 
 		subprocess.Popen(['v4l2-ctl', '-c', 'focus_auto=0', '-d', '/dev/video%s' %available_cams[0]])
 		subprocess.Popen(['v4l2-ctl', '-c', 'focus_auto=0', '-d', '/dev/video%s' %available_cams[1]])
-		subprocess.Popen(['uvcdynctrl'. '-v', '-d', 'video%s' %available_cams[0], '--set=Focus, Auto', '0'])
-		subprocess.Popen(['uvcdynctrl'. '-v', '-d', 'video%s' %available_cams[1], '--set=Focus, Auto', '0'])
+		subprocess.Popen(['uvcdynctrl', '-v', '-d', 'video%s' %available_cams[0], '--set=Focus, Auto', '0'])
+		subprocess.Popen(['uvcdynctrl', '-v', '-d', 'video%s' %available_cams[1], '--set=Focus, Auto', '0'])
 
 		self.CROPPED = [960, 720]
 
@@ -225,7 +232,7 @@ FOLDER = '/home/ammar/Documents/Projects/ROB599_RoboticsPerception/project/calib
 
 class calibrateStereoCameras(calibrateCameraCustom):
 	def __init__(self):
-		super(calibrateStereoCameras, self).__init__()
+		# super(calibrateStereoCameras, self).__init__()
 		self.w = WIDTH_SQUARE
 		self.h = HEIGHT_SQUARES
 		# self.w = HEIGHT_SQUARES
@@ -352,14 +359,14 @@ class calibrateStereoCameras(calibrateCameraCustom):
 		# can this be done with sets of images?
 		# average over the set of images
 		# Left Camera
-		self.getCameraCalibrationParameters(img_gray, self.objpoints, self.imgpointsL)
+		self.getCameraCalibrationParameters(self.objpoints, self.imgpointsL)
 		self.optimalNewCameraMatrix(img_gray)
 		ret, mtxL, distL, rvecsL, tvecsL, newcameramtxL, roiL = self.getCameraParams()
 		self.reProjectionError(self.imgpointsL)
 		self.saveCameraParams('.', 'CameraCalLeft')
 
 		# Right Camera
-		self.getCameraCalibrationParameters(img_gray, self.objpoints, self.imgpointsR)
+		self.getCameraCalibrationParameters(self.objpoints, self.imgpointsR)
 		self.optimalNewCameraMatrix(img_gray)
 		ret, mtxR, distR, rvecsR, tvecsR, newcameramtxR, roiR = self.getCameraParams()
 		self.reProjectionError(self.imgpointsR)

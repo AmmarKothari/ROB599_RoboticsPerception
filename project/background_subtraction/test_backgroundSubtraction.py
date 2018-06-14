@@ -1,21 +1,22 @@
 import cv2
 from backgroundSubtraction import removeBackground, cvObjectTracking, objectDetection, showImage, convert_z16_to_bgr
 
+import pdb
 
 
 
-
-r = removeBackground('Background_only.png')
-camera = cv2.VideoCapture('background_subtraction.avi')
+r = removeBackground('Images/Background_only.png')
+camera = cv2.VideoCapture('Images/background_subtraction.avi')
 font = cv2.FONT_HERSHEY_SIMPLEX
 
 
 
 
 ### testing for object tracking with built in openCV
-ret, back = r.maskBackground(cv2.imread('Stuff1.png'))
-cOT = cvObjectTracking((149, 85, 189, 227))
-oD = objectDetection()
+pdb.set_trace()
+# ret, back = r.maskBackground(cv2.imread('Stuff1.png'))
+# cOT = cvObjectTracking((149, 85, 189, 227))
+# oD = objectDetection()
 retc = True
 i = 0
 while retc:

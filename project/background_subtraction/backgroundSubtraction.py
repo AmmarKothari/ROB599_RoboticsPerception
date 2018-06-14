@@ -10,10 +10,10 @@ import numpy as np
 import pdb
 # from cal_test import calibrateCameraCustom, horizConcat
 import glob, os, time, subprocess
-import roslaunch
-import cv_bridge
-import rospy
-import sensor_msgs.msg
+# import roslaunch
+# import cv_bridge
+# import rospy
+# import sensor_msgs.msg
 import copy
 import time
 
